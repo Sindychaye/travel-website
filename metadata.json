@@ -1,0 +1,6 @@
+{
+  "name": "WanderAI - Smart Penang & Global Travel Assistant",
+  "description": "AI-powered travel companion offering personalized itineraries, discovery guides, interactive maps, and 24/7 intelligent trip planning for Penang and beyond.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
