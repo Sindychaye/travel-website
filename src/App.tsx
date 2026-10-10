@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { DestinationGallery } from './components/DestinationGallery';
@@ -6,17 +6,48 @@ import { DynamicItinerary } from './components/DynamicItinerary';
 import { AIChatWidget } from './components/AIChatWidget';
 import { PenangTravelGuide } from './components/PenangTravelGuide';
 import { DestinationDetailModal } from './components/DestinationDetailModal';
+import { SavedTripsModal } from './components/SavedTripsModal';
 import { Footer } from './components/Footer';
-import { Destination, ItineraryPlan, TravelStyle, TravelParty } from './types/travel';
+import { Destination, ItineraryPlan, SavedItinerary, TravelStyle, TravelParty } from './types/travel';
 import { DEFAULT_PENANG_ITINERARY } from './data/penangData';
 import { generateGeminiItinerary } from './services/aiTravelService';
+import {
+  loadCurrentItinerary,
+  saveCurrentItinerary,
+  loadSavedTrips,
+  saveTripToLibrary,
+  deleteSavedTrip,
+  clearCurrentItinerary,
+  getLastSavedTimestamp,
+} from './services/storageService';
 
 export default function App() {
-  const [itinerary, setItinerary] = useState<ItineraryPlan>(DEFAULT_PENANG_ITINERARY);
+  // Initialize from LocalStorage if available, fallback to DEFAULT_PENANG_ITINERARY
+  const [itinerary, setItinerary] = useState<ItineraryPlan>(() => {
+    return loadCurrentItinerary() || DEFAULT_PENANG_ITINERARY;
+  });
+
+  const [savedTrips, setSavedTrips] = useState<SavedItinerary[]>(() => {
+    return loadSavedTrips();
+  });
+
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(() => {
+    return getLastSavedTimestamp();
+  });
+
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string>('');
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
+  const [isSavedTripsModalOpen, setIsSavedTripsModalOpen] = useState<boolean>(false);
+
+  // Automatically persist the active itinerary to localStorage whenever it changes
+  useEffect(() => {
+    if (itinerary) {
+      saveCurrentItinerary(itinerary);
+      setLastSavedAt(new Date().toISOString());
+    }
+  }, [itinerary]);
 
   // Generate Itinerary triggered by Hero search
   const handleHeroSearch = async (
@@ -86,6 +117,34 @@ export default function App() {
     }
   };
 
+  // Local Storage Library Handlers
+  const handleSaveCurrentToLibrary = (customName?: string) => {
+    const saved = saveTripToLibrary(itinerary, customName);
+    setSavedTrips((prev) => {
+      const existing = prev.filter((t) => t.id !== saved.id);
+      return [saved, ...existing];
+    });
+  };
+
+  const handleLoadSavedTrip = (plan: ItineraryPlan) => {
+    setItinerary(plan);
+    const itineraryEl = document.getElementById('itinerary');
+    if (itineraryEl) {
+      itineraryEl.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleDeleteSavedTrip = (id: string) => {
+    const remaining = deleteSavedTrip(id);
+    setSavedTrips(remaining);
+  };
+
+  const handleResetToDefault = () => {
+    clearCurrentItinerary();
+    setItinerary(DEFAULT_PENANG_ITINERARY);
+    setLastSavedAt(new Date().toISOString());
+  };
+
   // Smooth scroll helper
   const handleNavigateSection = (sectionId: string) => {
     const el = document.getElementById(sectionId);
@@ -100,6 +159,8 @@ export default function App() {
       <Navbar
         onOpenChat={() => setIsChatOpen(true)}
         onNavigateSection={handleNavigateSection}
+        onOpenSavedTrips={() => setIsSavedTripsModalOpen(true)}
+        savedTripsCount={savedTrips.length}
       />
 
       {/* Main Content Sections */}
@@ -124,6 +185,9 @@ export default function App() {
             handleHeroSearch(prompt, days, 'Balanced & Cultural', 'Couple / Romantic')
           }
           onAskAIAboutStop={handleAskAIAboutTopic}
+          onSaveToLibrary={() => handleSaveCurrentToLibrary()}
+          onOpenSavedTrips={() => setIsSavedTripsModalOpen(true)}
+          lastSavedAt={lastSavedAt}
         />
 
         {/* Penang Street Food & Field Guide */}
@@ -149,6 +213,19 @@ export default function App() {
         onClose={() => setSelectedDestination(null)}
         onAskAIAboutPlace={handleAskAIAboutTopic}
         onAddToItinerary={handleAddToItinerary}
+      />
+
+      {/* Modal for viewing and managing LocalStorage saved itineraries */}
+      <SavedTripsModal
+        isOpen={isSavedTripsModalOpen}
+        onClose={() => setIsSavedTripsModalOpen(false)}
+        savedTrips={savedTrips}
+        currentPlan={itinerary}
+        onLoadTrip={handleLoadSavedTrip}
+        onDeleteTrip={handleDeleteSavedTrip}
+        onSaveCurrentTrip={handleSaveCurrentToLibrary}
+        onResetToDefault={handleResetToDefault}
+        lastSavedAt={lastSavedAt}
       />
     </div>
   );

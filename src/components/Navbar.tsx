@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
-import { Compass, Sparkles, MapPin, Sun, Menu, X, Calendar, MessageSquare } from 'lucide-react';
+import { Compass, Sparkles, MapPin, Sun, Menu, X, Calendar, MessageSquare, Bookmark } from 'lucide-react';
 
 interface Props {
   onOpenChat: () => void;
   onNavigateSection: (sectionId: string) => void;
+  onOpenSavedTrips: () => void;
+  savedTripsCount: number;
 }
 
-export const Navbar: React.FC<Props> = ({ onOpenChat, onNavigateSection }) => {
+export const Navbar: React.FC<Props> = ({
+  onOpenChat,
+  onNavigateSection,
+  onOpenSavedTrips,
+  savedTripsCount,
+}) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -68,6 +75,21 @@ export const Navbar: React.FC<Props> = ({ onOpenChat, onNavigateSection }) => {
             <span className="text-amber-400/90 font-medium">Breezy</span>
           </div>
 
+          {/* Saved Trips button */}
+          <button
+            onClick={onOpenSavedTrips}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 text-xs font-semibold transition-all hover:scale-[1.02] cursor-pointer"
+            title="View saved and auto-synced itineraries"
+          >
+            <Bookmark className="w-3.5 h-3.5 text-amber-400" />
+            <span>My Trips</span>
+            {savedTripsCount > 0 && (
+              <span className="w-4 h-4 rounded-full bg-amber-500 text-stone-950 text-[10px] font-bold flex items-center justify-center">
+                {savedTripsCount}
+              </span>
+            )}
+          </button>
+
           {/* AI Assistant button */}
           <button
             onClick={onOpenChat}
@@ -89,6 +111,18 @@ export const Navbar: React.FC<Props> = ({ onOpenChat, onNavigateSection }) => {
 
         {/* Mobile Menu Hamburger */}
         <div className="flex md:hidden items-center gap-2">
+          <button
+            onClick={onOpenSavedTrips}
+            className="p-2 rounded-xl bg-stone-800 text-amber-400 border border-stone-700 relative"
+            aria-label="Saved Trips"
+          >
+            <Bookmark className="w-4 h-4" />
+            {savedTripsCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-500 text-stone-950 text-[9px] font-bold flex items-center justify-center">
+                {savedTripsCount}
+              </span>
+            )}
+          </button>
           <button
             onClick={onOpenChat}
             className="p-2 rounded-xl bg-stone-800 text-amber-400 border border-stone-700"
@@ -127,6 +161,16 @@ export const Navbar: React.FC<Props> = ({ onOpenChat, onNavigateSection }) => {
           </div>
 
           <div className="pt-2 flex flex-col gap-2">
+            <button
+              onClick={() => {
+                onOpenSavedTrips();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-stone-800 text-stone-200 text-xs font-semibold"
+            >
+              <Bookmark className="w-4 h-4 text-amber-400" />
+              <span>My Saved Trips ({savedTripsCount})</span>
+            </button>
             <button
               onClick={() => {
                 onOpenChat();

@@ -15,6 +15,8 @@ import {
   Check,
   RotateCw,
   Sliders,
+  Bookmark,
+  CheckCircle2,
 } from 'lucide-react';
 import { ItineraryPlan, ItineraryStop } from '../types/travel';
 import { InteractiveMapPlaceholder } from './InteractiveMapPlaceholder';
@@ -24,6 +26,9 @@ interface Props {
   isLoading?: boolean;
   onRegenerate: (prompt: string, days: number) => void;
   onAskAIAboutStop?: (stopName: string) => void;
+  onSaveToLibrary?: () => void;
+  onOpenSavedTrips?: () => void;
+  lastSavedAt?: string | null;
 }
 
 export const DynamicItinerary: React.FC<Props> = ({
@@ -31,6 +36,9 @@ export const DynamicItinerary: React.FC<Props> = ({
   isLoading = false,
   onRegenerate,
   onAskAIAboutStop,
+  onSaveToLibrary,
+  onOpenSavedTrips,
+  lastSavedAt,
 }) => {
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
   const [activeStopId, setActiveStopId] = useState<string | null>(null);
@@ -38,8 +46,17 @@ export const DynamicItinerary: React.FC<Props> = ({
   const [showConfig, setShowConfig] = useState<boolean>(false);
   const [customDays, setCustomDays] = useState<number>(itinerary.days.length || 3);
   const [customPrompt, setCustomPrompt] = useState<string>('Plan a food and heritage trip to Penang');
+  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
 
   const currentDay = itinerary.days[selectedDayIndex] || itinerary.days[0];
+
+  const handleSaveTrip = () => {
+    if (onSaveToLibrary) {
+      onSaveToLibrary();
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+    }
+  };
 
   const handleShare = () => {
     const text = `Check out my ${itinerary.title} for ${itinerary.destination}!\n${itinerary.summary}`;
@@ -91,11 +108,48 @@ export const DynamicItinerary: React.FC<Props> = ({
                   <span>{itinerary.bestSeason}</span>
                 </div>
               )}
+              {/* Local Storage Auto-sync Indicator */}
+              <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Auto-saved to browser</span>
+              </div>
             </div>
           </div>
 
           {/* Action Toolbar */}
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Bookmark to Library Button */}
+            {onSaveToLibrary && (
+              <button
+                onClick={handleSaveTrip}
+                className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                title="Save this itinerary to your trips library"
+              >
+                {saveSuccess ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-white" />
+                    <span>Saved to Trips!</span>
+                  </>
+                ) : (
+                  <>
+                    <Bookmark className="w-3.5 h-3.5 text-white" />
+                    <span>Save to My Trips</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* View Saved Trips Button */}
+            {onOpenSavedTrips && (
+              <button
+                onClick={onOpenSavedTrips}
+                className="px-3.5 py-2 rounded-xl bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+              >
+                <Bookmark className="w-3.5 h-3.5 text-stone-600" />
+                <span>My Saved Trips</span>
+              </button>
+            )}
+
             <button
               onClick={() => setShowConfig(!showConfig)}
               className="px-3.5 py-2 rounded-xl bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
@@ -126,7 +180,7 @@ export const DynamicItinerary: React.FC<Props> = ({
               className="px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print Itinerary</span>
+              <span>Print</span>
             </button>
           </div>
         </div>

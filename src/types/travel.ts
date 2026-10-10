@@ -50,12 +50,23 @@ export interface ItineraryDay {
 }
 
 export interface ItineraryPlan {
+  id?: string;
   title: string;
   destination: string;
   summary: string;
   estimatedBudget?: string;
   bestSeason?: string;
   days: ItineraryDay[];
+  createdAt?: string;
+  updatedAt?: string;
+  isCustom?: boolean;
+}
+
+export interface SavedItinerary {
+  id: string;
+  name: string;
+  savedAt: string;
+  plan: ItineraryPlan;
 }
 
 export interface ChatMessage {
